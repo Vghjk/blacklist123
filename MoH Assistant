@@ -1,0 +1,1965 @@
+local sf = require "sampfuncs"
+local key = require "vkeys"
+local inicfg = require "inicfg"
+-- local pie = require 'imgui_piemenu'
+local dlstatus = require "moonloader".download_status
+directory = "moonloader\\config\\MoH_Assistant.ini"
+ini = inicfg.load({}, directory)
+-- local isNewVersion = false
+-- local isUpdate = false
+local imgui = require 'imgui'
+local fa = require 'faIcons'
+local encoding = require 'encoding'
+local sampev = require("samp.events")
+local ffi = require 'ffi'
+local lanes = require('lanes').configure()
+encoding.default = 'CP1251'
+u8 = encoding.UTF8
+require 'lib.sampfuncs'
+font = renderCreateFont("Arial", 8, 5)
+local show_main_window1 = imgui.ImBool(false)
+local operaciy = imgui.ImBool(false)
+local overlay = imgui.ImBool(false)
+local over = imgui.ImBool(false)
+local kekeros = imgui.ImBool(false)
+local show_two_window = imgui.ImBool(false)
+local rang = imgui.ImBuffer(''..ini.checker.rang..'', 256)
+local tag = imgui.ImBuffer(u8(''..ini.checker.tag..''), 256)
+local medikamenty = imgui.ImBool(false)
+local variable = imgui.ImInt(0)
+local auto_lek = imgui.ImBool(false)
+local auto_screen = imgui.ImBool(ini.checker.auto_screen)
+local podskasky = imgui.ImBool(false)
+local otugrovky = imgui.ImBool(ini.checker.otug_find)
+local otugrovky_1 = imgui.ImBool(ini.checker.otug_medskip)
+local otugrovky_2 = imgui.ImBool(ini.checker.otug_c_060)
+local otugrovky_3 = imgui.ImBool(ini.checker.otug_r_and_f)
+local zaderjka = imgui.ImBuffer(''..ini.checker.zaderjka..'', 256)
+local otugrovky_4 = imgui.ImBool(false)
+local col_vo_le4eniy = '0'
+local otugrovky_5 = imgui.ImBool(false)
+local otugrovky_6 = imgui.ImBool(ini.checker.auto_otv)
+local pacienty = imgui.ImBool(ini.checker.colvo_pacientov)
+local checker = imgui.ImBool(ini.checker.checker_druzey)
+local auto_otv = imgui.ImBool(ini.checker.auto_otv)
+local pokaz_overlay = imgui.ImBool(ini.checker.overlay)
+local jenskiy = imgui.ImBool(ini.checker.devyshka)
+local shpora = imgui.ImBuffer(''..ini.checker.shpora..'', 256)
+local drujok_1 = imgui.ImBuffer(''..ini.checker.drug_1..'', 256)
+local drujok_2 = imgui.ImBuffer(''..ini.checker.drug_2..'', 256)
+local drujok_3 = imgui.ImBuffer(''..ini.checker.drug_3..'', 256)
+local drujok_4 = imgui.ImBuffer(''..ini.checker.drug_4..'', 256)
+local drujok_5 = imgui.ImBuffer(''..ini.checker.drug_5..'', 256)
+local drujok_6 = imgui.ImBuffer(''..ini.checker.drug_6..'', 256)
+local drujok_7 = imgui.ImBuffer(''..ini.checker.drug_7..'', 256)
+local drujok_8 = imgui.ImBuffer(''..ini.checker.drug_8..'', 256)
+local drujok_9 = imgui.ImBuffer(''..ini.checker.drug_9..'', 256)
+local drujok_10 = imgui.ImBuffer(''..ini.checker.drug_10..'', 256)
+
+ffi.cdef[[
+    typedef unsigned short WORD;
+
+    typedef struct _SYSTEMTIME {
+        WORD wYear;
+        WORD wMonth;
+        WORD wDayOfWeek;
+        WORD wDay;
+        WORD wHour;
+        WORD wMinute;
+        WORD wSecond;
+        WORD wMilliseconds;
+    } SYSTEMTIME, *PSYSTEMTIME;
+
+    void GetSystemTime(
+        PSYSTEMTIME lpSystemTime
+    );
+
+    void GetLocalTime(
+        PSYSTEMTIME lpSystemTime
+    );
+]]
+
+function systemTime()
+    local time = ffi.new("SYSTEMTIME")
+    ffi.C.GetSystemTime(time)
+    return time
+end
+
+function localTime()
+    local time = ffi.new("SYSTEMTIME")
+    ffi.C.GetLocalTime(time)
+    return time
+end
+
+local fa_font = nil
+local fa_glyph_ranges = imgui.ImGlyphRanges({ fa.min_range, fa.max_range })
+
+function imgui.BeforeDrawFrame()
+  if fa_font == nil then
+    local font_config = imgui.ImFontConfig() -- to use 'imgui.ImFontConfig.new()' on error
+    font_config.MergeMode = true
+
+    fa_font = imgui.GetIO().Fonts:AddFontFromFileTTF('moonloader/resource/fonts/fontawesome-webfont.ttf', 14.0, font_config, fa_glyph_ranges)
+  end
+end
+
+function main()
+    if not isSampLoaded() or not isSampfuncsLoaded() then return end
+    while not isSampAvailable() do wait(100) end
+	if sampGetCurrentServerAddress() == "5.254.104.131" then
+		gameServer = "Red"
+	elseif sampGetCurrentServerAddress() == "5.254.104.132"  then -- проверяем подключенный сервер
+		gameServer = "Green"
+	elseif sampGetCurrentServerAddress() == "5.254.104.133"  then -- проверяем подключенный сервер
+		gameServer = "Yellow"
+	elseif sampGetCurrentServerAddress() == "5.254.104.134"  then -- проверяем подключенный сервер
+		gameServer = "Orange"
+	elseif sampGetCurrentServerAddress() == "5.254.104.135"  then -- проверяем подключенный сервер
+		gameServer = "Blue"
+	elseif sampGetCurrentServerAddress() == "5.254.104.136"  then -- проверяем подключенный сервер
+		gameServer = "White"
+	elseif sampGetCurrentServerAddress() == "5.254.104.137"  then -- проверяем подключенный сервер
+		gameServer = "Silver"
+	elseif sampGetCurrentServerAddress() == "5.254.104.138"  then -- проверяем подключенный сервер
+		gameServer = "Purple"
+	elseif sampGetCurrentServerAddress() == "5.254.104.139" then
+		gameServer = "Chocolate"
+    end
+	-- autoupdate("https://www.dropbox.com/s/d9go7ufpkke3l4r/Update.json?dl=0", '['..string.upper(thisScript().name)..']: ', "https://www.dropbox.com/s/d9go7ufpkke3l4r/Update.json?dl=0")
+	-- update()
+	-- while not isUpdate do wait(0) end
+	sampAddChatMessage('eblo', 0xFFFFFF)
+	sampRegisterChatCommand("moh", function () show_main_window1.v = not show_main_window1.v end)
+	sampRegisterChatCommand('find', rp_find)
+	sampRegisterChatCommand('invite', rp_invite)
+	sampRegisterChatCommand('uninvite', rp_uninvite)
+	sampRegisterChatCommand('medhelp', rp_medhelp)
+	sampRegisterChatCommand('c', rp_c_060)
+	sampRegisterChatCommand('r', rp_r_pr)
+	sampRegisterChatCommand('f', rp_f_pr)
+	sampRegisterChatCommand('showall', rp_showall)
+	sampRegisterChatCommand('ftr', ftr)
+	sampRegisterChatCommand('sbs', sobeska)
+	sampRegisterChatCommand('rn', function (text) if text ~= '' then sampSendChat('/r (( '..text..' ))') end end)
+	sampRegisterChatCommand('fn', function (text) lua_thread.create(function () nonrp = true wait(1) nonrp = false end) if text ~= '' then sampSendChat('/f (( '..text..' ))') end end)
+	sampRegisterChatCommand('success', function () lua_thread.create(function () success = true wait(1) success = false end) end)
+	-- sampRegisterChatCommand('medhelp', function (id, _cena_) _cena_ = cena local nick = sampGetPlayerNickname(id) sampSendChat('/me t') sampSendChat('/medhelp '..id..' '..cena'') end)
+	sampRegisterChatCommand('medskip', rp_medskip)
+	sampRegisterChatCommand('blacklist', function (arg) local name = sampGetPlayerNickname(arg):gsub('_', ' ') local nameeee = sampGetPlayerNickname(arg) async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/black', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Blue' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Blue' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistgreen', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Green' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Green' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistyellow', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Yellow' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Yellow' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistorange', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Orange' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Orange' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistwhite', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'White' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'White' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistsilver', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Silver' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Silver' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blackpurple', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blackchocolate', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Chocolate' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	end)
+	sampRegisterChatCommand('uninvite', rp_uninvite)
+	img = imgui.CreateTextureFromFile('moonloader/MoH/image.jpg')
+	local directory = 'moonloader/config/MoH_Assistant.ini'
+	local ini = inicfg.load(nil, directory)
+	while true do
+	wait(0)
+	if jens then
+	devkam = 'а'
+	elseif not jens then
+	devkam = ''
+	end
+	-- lua_thread.create(function ()
+	-- if sampGetPlayerIdByNickname(drujok_1.v) or sampGetPlayerIdByNickname(drujok_2.v) or sampGetPlayerIdByNickname(drujok_3.v) or sampGetPlayerIdByNickname(drujok_4.v) or sampGetPlayerIdByNickname(drujok_5.v) or sampGetPlayerIdByNickname(drujok_6.v) or sampGetPlayerIdByNickname(drujok_7.v) or sampGetPlayerIdByNickname(drujok_8.v) or sampGetPlayerIdByNickname(drujok_9.v) or sampGetPlayerIdByNickname(drujok_10.v) or sampGetPlayerIdByNickname(drujok_1.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_2.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_3.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_4.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_5.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_6.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_7.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_8.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_9.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_10.v:gsub('_', ' ')) then
+	-- addd_in_checker = true
+	-- elseif not sampGetPlayerIdByNickname(drujok_1.v) or sampGetPlayerIdByNickname(drujok_2.v) or sampGetPlayerIdByNickname(drujok_3.v) or sampGetPlayerIdByNickname(drujok_4.v) or sampGetPlayerIdByNickname(drujok_5.v) or sampGetPlayerIdByNickname(drujok_6.v) or sampGetPlayerIdByNickname(drujok_7.v) or sampGetPlayerIdByNickname(drujok_8.v) or sampGetPlayerIdByNickname(drujok_9.v) or sampGetPlayerIdByNickname(drujok_10.v) or sampGetPlayerIdByNickname(drujok_1.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_2.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_3.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_4.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_5.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_6.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_7.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_8.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_9.v:gsub('_', ' ')) or sampGetPlayerIdByNickname(drujok_10.v:gsub('_', ' ')) then
+	-- addd_in_checker = false
+	-- end
+	-- end)
+	imgui.Process = true
+	imgui.ShowCursor = false
+	end
+end
+	
+function apply_custom_style()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local clr = imgui.Col
+    local ImVec4 = imgui.ImVec4
+
+    style.WindowRounding = 2.0
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.84)
+    style.ChildWindowRounding = 2.0
+    style.FrameRounding = 2.0
+    style.ItemSpacing = imgui.ImVec2(5.0, 4.0)
+    style.ScrollbarSize = 13.0
+    style.ScrollbarRounding = 0
+    style.GrabMinSize = 8.0
+    style.GrabRounding = 1.0
+
+    colors[clr.FrameBg]                = ImVec4(0.160, 0.160, 0.160, 0.315)
+    colors[clr.FrameBgHovered]         = ImVec4(0.160, 0.160, 0.160, 0.315)
+    colors[clr.FrameBgActive]          = ImVec4(0.210, 0.210, 0.210, 0.670)
+    colors[clr.TitleBg]                = ImVec4(0.255, 0.000, 0.000, 1.000)
+    colors[clr.TitleBgActive]          = ImVec4(0.255, 0.000, 0.000, 1.000)
+    colors[clr.TitleBgCollapsed]       = ImVec4(0.255, 0.000, 0.000, 1.000)
+    colors[clr.CheckMark]              = ImVec4(0.009, 0.845, 0.000, 1.000)
+    colors[clr.SliderGrab]             = ImVec4(0.24, 0.52, 0.88, 1.00)
+    colors[clr.SliderGrabActive]       = ImVec4(0.139, 0.508, 0.000, 1.000)
+    colors[clr.Button]                 = ImVec4(0.000, 0.000, 0.000, 0.400)
+    colors[clr.ButtonHovered]          = ImVec4(0.000, 0.619, 0.014, 1.000)
+    colors[clr.ButtonActive]           = ImVec4(0.06, 0.53, 0.98, 1.00)
+    colors[clr.Header]                 = ImVec4(0.26, 0.59, 0.98, 0.31)
+    colors[clr.HeaderHovered]          = ImVec4(0.26, 0.59, 0.98, 0.80)
+    colors[clr.HeaderActive]           = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.Separator]              = ImVec4(0.800, 0.000, 0.000, 0.700)
+    colors[clr.SeparatorHovered]       = ImVec4(0.800, 0.000, 0.000, 0.700)
+    colors[clr.SeparatorActive]        = ImVec4(0.800, 0.000, 0.000, 0.700)
+    colors[clr.ResizeGrip]             = ImVec4(0.000, 1.000, 0.221, 0.597)
+    colors[clr.ResizeGripHovered]      = ImVec4(0.26, 0.59, 0.98, 0.67)
+    colors[clr.ResizeGripActive]       = ImVec4(0.26, 0.59, 0.98, 0.95)
+    colors[clr.TextSelectedBg]         = ImVec4(0.26, 0.59, 0.98, 0.35)
+    colors[clr.Text]                   = ImVec4(1.000, 1.000, 1.000, 1.000)
+    colors[clr.TextDisabled]           = ImVec4(0.000, 0.543, 0.983, 1.000)
+    colors[clr.WindowBg]               = ImVec4(0.000, 0.000, 0.000, 0.895)
+    colors[clr.ChildWindowBg]          = ImVec4(0.00, 0.00, 0.00, 0.00)
+    colors[clr.PopupBg]                = ImVec4(0.07, 0.07, 0.09, 1.00)
+    colors[clr.ComboBg]                = colors[clr.PopupBg]
+    colors[clr.Border]                 = ImVec4(0.500, 0.000, 0.000, 1.500)
+    colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10)
+    colors[clr.MenuBarBg]              = ImVec4(0.86, 0.86, 0.86, 1.00)
+    colors[clr.ScrollbarBg]            = ImVec4(0.000, 0.000, 0.000, 0.801)
+    colors[clr.ScrollbarGrab]          = ImVec4(0.238, 0.238, 0.238, 1.00)
+    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.238, 0.238, 0.238, 1.00)
+    colors[clr.ScrollbarGrabActive]    = ImVec4(0.139, 0.508, 0.000, 1.000)
+    colors[clr.CloseButton]            = ImVec4(0.59, 0.59, 0.59, 0.50)
+    colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.PlotLines]              = ImVec4(0.39, 0.39, 0.39, 1.00)
+    colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
+    colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
+    colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
+    colors[clr.ModalWindowDarkening]   = ImVec4(0.20, 0.20, 0.20, 0.35)
+end
+
+function apply_custom_style_1()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local clr = imgui.Col
+    local ImVec4 = imgui.ImVec4
+
+    style.WindowRounding = 2.0
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.84)
+    style.ChildWindowRounding = 2.0
+    style.FrameRounding = 2.0
+    style.ItemSpacing = imgui.ImVec2(5.0, 4.0)
+    style.ScrollbarSize = 13.0
+    style.ScrollbarRounding = 0
+    style.GrabMinSize = 8.0
+    style.GrabRounding = 1.0
+	
+    colors[clr.FrameBg]                = ImVec4(0.500, 0.000, 0.000, 1.500)
+    colors[clr.FrameBgHovered]         = ImVec4(0.500, 0.000, 0.000, 1.500)
+    colors[clr.FrameBgActive]          = ImVec4(0.500, 0.000, 0.000, 1.500)
+    colors[clr.TitleBg]                = ImVec4(0.026, 0.597, 0.000, 1.000)
+    colors[clr.TitleBgActive]          = ImVec4(0.255, 0.000, 0.000, 1.000)
+    colors[clr.TitleBgCollapsed]       = ImVec4(0.099, 0.315, 0.000, 0.000)
+    colors[clr.CheckMark]              = ImVec4(0.009, 0.845, 0.000, 1.000)
+    colors[clr.SliderGrab]             = ImVec4(0.24, 0.52, 0.88, 1.00)
+    colors[clr.SliderGrabActive]       = ImVec4(0.139, 0.508, 0.000, 1.000)
+    colors[clr.Button]                 = ImVec4(0.000, 0.000, 0.000, 0.400)
+    colors[clr.ButtonHovered]          = ImVec4(0.000, 0.619, 0.014, 1.000)
+    colors[clr.ButtonActive]           = ImVec4(0.06, 0.53, 0.98, 1.00)
+    colors[clr.Header]                 = ImVec4(0.26, 0.59, 0.98, 0.31)
+    colors[clr.HeaderHovered]          = ImVec4(0.26, 0.59, 0.98, 0.80)
+    colors[clr.HeaderActive]           = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.Separator]              = ImVec4(0.300, 0.000, 0.000, 0.700)
+    colors[clr.SeparatorHovered]       = ImVec4(0.300, 0.000, 0.000, 0.700)
+    colors[clr.SeparatorActive]        = ImVec4(0.300, 0.000, 0.000, 0.70000)
+    colors[clr.ResizeGrip]             = ImVec4(0.000, 1.000, 0.221, 0.597)
+    colors[clr.ResizeGripHovered]      = ImVec4(0.26, 0.59, 0.98, 0.67)
+    colors[clr.ResizeGripActive]       = ImVec4(0.26, 0.59, 0.98, 0.95)
+    colors[clr.TextSelectedBg]         = ImVec4(0.26, 0.59, 0.98, 0.35)
+    colors[clr.Text]                   = ImVec4(1.000, 1.000, 1.000, 1.000)
+    colors[clr.TextDisabled]           = ImVec4(0.000, 0.543, 0.983, 1.000)
+    colors[clr.WindowBg]               = ImVec4(0.300, 0.000, 0.000, 0.700)
+    colors[clr.ChildWindowBg]          = ImVec4(0.00, 0.00, 0.00, 0.00)
+    colors[clr.PopupBg]                = ImVec4(0.07, 0.07, 0.09, 1.00)
+    colors[clr.ComboBg]                = colors[clr.PopupBg]
+    colors[clr.Border]                 = ImVec4(0.500, 0.000, 0.000, 1.500)
+    colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10)
+    colors[clr.MenuBarBg]              = ImVec4(0.86, 0.86, 0.86, 1.00)
+    colors[clr.ScrollbarBg]            = ImVec4(0.000, 0.000, 0.000, 0.801)
+    colors[clr.ScrollbarGrab]          = ImVec4(0.238, 0.238, 0.238, 1.00)
+    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.238, 0.238, 0.238, 1.00)
+    colors[clr.ScrollbarGrabActive]    = ImVec4(0.139, 0.508, 0.000, 1.000)
+    colors[clr.CloseButton]            = ImVec4(0.59, 0.59, 0.59, 0.50)
+    colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.PlotLines]              = ImVec4(0.39, 0.39, 0.39, 1.00)
+    colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
+    colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
+    colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
+    colors[clr.ModalWindowDarkening]   = ImVec4(0.20, 0.20, 0.20, 0.35)
+end
+
+
+function imgui.OnDrawFrame()	
+	
+ -- if checker.v or ini.checker.checker_druzey == true then
+    -- apply_custom_style_1()
+    -- local _, mid = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    -- local name = sampGetPlayerNickname(mid):gsub('_', ' ')
+    -- local x, y = getScreenResolution()
+    -- local time = localTime()
+    -- imgui.ShowCursor = false
+    -- imgui.SetMouseCursor(1)
+    -- imgui.LockPlayer = false
+    -- imgui.SetNextWindowPos(imgui.ImVec2(x / 2 - 580, y / 2 + 100), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    -- imgui.SetNextWindowSize(imgui.ImVec2(207, 100), imgui.Cond.FirstUseEver)
+    -- imgui.Begin(' ', kekeros, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.ShowBorders)
+	-- local directory = 'moonloader/config/MoH_Assistant.ini'
+	-- local ini = inicfg.load(nil, directory)
+	-- if ini.checker.drug_1 == nil then
+	-- ini.checker.drug_1 = ''
+	-- end
+	-- if ini.checker.drug_2 == nil then
+	-- ini.checker.drug_2 = ''
+	-- end
+	-- if ini.checker.drug_3 == nil then
+	-- ini.checker.drug_3 = ''
+	-- end
+	-- if ini.checker.drug_4 == nil then
+	-- ini.checker.drug_4 = ''
+	-- end
+	-- if ini.checker.drug_5 == nil then
+	-- ini.checker.drug_5 = ''
+	-- end
+	-- if ini.checker.drug_6 == nil then
+	-- ini.checker.drug_6 = ''
+	-- end
+	-- if ini.checker.drug_7 == nil then
+	-- ini.checker.drug_7 = ''
+	-- end
+	-- if ini.checker.drug_8 == nil then
+	-- ini.checker.drug_8 = ''
+	-- end
+	-- if ini.checker.drug_9 == nil then
+	-- ini.checker.drug_9 = ''
+	-- end
+	-- if ini.checker.drug_10 == nil then
+	-- ini.checker.drug_10 = ''
+	-- end
+	-- inicfg.save(ini, directory)
+	-- if addd_in_checker then
+	  -- if ini.checker.drug_1 ~= nil and ini.checker.drug_1 ~= '' and sampGetPlayerIdByNickname(drujok_1.v) then
+	  -- imgui.Text(''..ini.checker.drug_1..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_1..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_2 ~= nil and ini.checker.drug_2 ~= '' and sampGetPlayerIdByNickname(drujok_2.v) then
+	  -- imgui.Text(''..ini.checker.drug_2..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_2..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_3 ~= nil and ini.checker.drug_3 ~= '' and sampGetPlayerIdByNickname(drujok_3.v) then
+	  -- imgui.Text(''..ini.checker.drug_3..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_3..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_4 ~= nil and ini.checker.drug_4 ~= '' and sampGetPlayerIdByNickname(drujok_4.v) then
+	  -- imgui.Text(''..ini.checker.drug_4..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_4..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_5 ~= nil and ini.checker.drug_5 ~= '' and sampGetPlayerIdByNickname(drujok_5.v) then
+	  -- imgui.Text(''..ini.checker.drug_5..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_5..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_6 ~= nil and ini.checker.drug_6 ~= '' and sampGetPlayerIdByNickname(drujok_6.v) then
+	  -- imgui.Text(''..ini.checker.drug_6..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_6..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_7 ~= nil and ini.checker.drug_7 ~= '' and sampGetPlayerIdByNickname(drujok_7.v) then
+	  -- imgui.Text(''..ini.checker.drug_7..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_7..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_8 ~= nil and ini.checker.drug_8 ~= '' and sampGetPlayerIdByNickname(drujok_8.v) then
+	  -- imgui.Text(''..ini.checker.drug_8..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_8..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_9 ~= nil and ini.checker.drug_9 ~= '' and sampGetPlayerIdByNickname(drujok_9.v) then
+	  -- imgui.Text(''..ini.checker.drug_9..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_9..' [offline]')
+	  -- end
+	  -- if ini.checker.drug_10 ~= nil and ini.checker.drug_10 ~= '' and sampGetPlayerIdByNickname(drujok_10.v) then
+	  -- imgui.Text(''..ini.checker.drug_10..' [online]')
+	  -- else
+	  -- imgui.Text(''..ini.checker.drug_10..' [offline]')
+	  -- end
+	-- end
+ -- imgui.End()
+ -- end	
+	
+ if overlay or ini.checker.overlay == true then
+  apply_custom_style_1()
+  local _, mid = sampGetPlayerIdByCharHandle(PLAYER_PED)
+  local name = sampGetPlayerNickname(mid):gsub('_', ' ')
+  local x, y = getScreenResolution()
+  local time = localTime()
+    imgui.ShowCursor = false
+    imgui.SetMouseCursor(1)
+    imgui.LockPlayer = false
+    imgui.SetNextWindowPos(imgui.ImVec2(x / 2 - 580, y / 2 - 90), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    imgui.SetNextWindowSize(imgui.ImVec2(207, 100), imgui.Cond.FirstUseEver)
+    imgui.Begin("", over, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.ShowBorders)
+	imgui.Text(u8"Ваш ник: "..name)
+	imgui.Text(u8"Ваш id: "..mid)
+	imgui.Text(u8"Должность: "..rang.v)
+	imgui.Text(u8"Кол-во вылеченых пациентов: "..col_vo_le4eniy)
+	imgui.Text(u8"Время: "..string.format("%d:%d:%d", time.wHour, time.wMinute, time.wSecond))
+
+	imgui.End()
+ end
+ 
+ if show_main_window1.v then
+ apply_custom_style()
+    directory = "moonloader/config/MoH_Assistant.ini"
+	ini = inicfg.load(nil, directory)
+    local x, y = getScreenResolution()
+    imgui.ShowCursor = true
+    imgui.SetMouseCursor(1)
+    imgui.LockPlayer = true
+    imgui.SetNextWindowPos(imgui.ImVec2(x / 2, y / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    imgui.SetNextWindowSize(imgui.ImVec2(706, 500), imgui.Cond.FirstUseEver)
+    imgui.Begin('Ministry of Health', show_main_window1)
+    imgui.BeginChild('left pane', imgui.ImVec2(150, 0), true)
+	if imgui.Selectable(u8'Основное', false) then selected = 1 end
+	if imgui.Selectable(u8'Модификации', false) then selected = 3 end
+	if imgui.Selectable(u8'Операции', false) then selected = 4 end
+	if imgui.Selectable(u8'Шпора', false) then selected = 5 end
+	-- if imgui.Selectable(u8'Чекер друзей', false) then selected = 6 end
+	imgui.EndChild()
+	imgui.SameLine()
+	imgui.BeginChild('main pane', imgui.ImVec2(0, 0), true)
+	if not pashel_otsuda then
+	imgui.Image(img, imgui.ImVec2(514, 100))
+	imgui.TextColoredRGB(u8'Данный скрипт писался специально для Министерства Здравоохранения на\nAdvance Role Play. Хоть уже есть примерно 3 модификации с такой же сутью и\nтак же для Advance Role Play, но они либо устарели, либо ими никто не пользуется.\nСейчас в основном у всех Multiahk и когда я посмотрел что же это за творение,\nу меня начался рвотный рефлекс. Особенно когда рекламируют его в /r чат и\nпишут что это удобный и современный скрипт, ещё и рекомендуют скачать это, я\nпросто задаю вопрос "Что с вами не так?", но люди же это скачивают и пользуются\nэтим, не понимая что лучше скачать биндер от кваса и не быть говноедом, а не\nиспользовать Мультиахк и гордится этим. По этому я решил написать новый скрипт\nдля медиков, который точно уж более современее, удобнее, сексуальнее и лучше\nтого, чем вы пользовались до этого (про мультиахк идёт речь). Да, конечно фанаты\nи великие защитники такого "исскуства" как Auto Hot Key будут писать что-то типо\nтакого "Уууу школьник ипаный написаль хавно какои то, да такое любой сможет за\n5 мин написал, фу лох блеа, ахк топ!", сказать таким людям могу только\nодно - пошёл нахуй. Я воспринимаю только адекватно аргументированую критику, а\nне просто пустые слова, без приведения фактов. Ладно, думаю все всё поняли.\nЖелаю приятного пользования данной конфеткой)')
+	end
+	if selected == 1 then
+	pashel_otsuda = true
+	imgui.Text(u8'Ваша должность')
+	imgui.InputText('', rang)
+	if rang.v then
+	ini.checker.rang = rang.v
+	end
+	imgui.Text(u8'Тег в /f')
+	imgui.InputText(' ', tag)
+	if tag.v or ini.checker.tag ~= '' then
+	tag_on = true
+	ini.checker.tag = tag.v
+	end
+	if imgui.Button(u8'Скачать и установить обновление', btn_size) then
+			async_http_request('GET', 'https://raw.githubusercontent.com/SParhutik/MoD-Helper/master/mo.luac', nil, 
+				function(response) -- вызовется при успешном выполнении и получении ответа
+				local f = assert(io.open(getWorkingDirectory() .. '/MoH Assistant.luac', 'wb'))
+				f:write(response.text)
+				f:close()
+				sampAddChatMessage("[MoD-Helper]{FFFFFF} Обновление успешно, перезагружаем скрипт.", 0x046D63)
+				thisScript():reload()
+			end,
+			function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+				print(err)
+				sampAddChatMessage("[MoD-Helper]{FFFFFF} Произошла ошибка при обновлении, попробуйте позже.", 0x046D63)
+				return
+			end)
+	end
+	imgui.Separator()
+	imgui.CenterTextColoredRGB(u8'                      Информация о скрипте')
+	imgui.TextColoredRGB(u8'MoH Assistant - это универсальный скрипт для работы в Министерстве Здравоохранения\nДанный скрипт отличается от других более расширеной функциональностью,\nкрасивым дизайном и интуитивно понятным интерфейсом')
+	imgui.Separator()
+	imgui.CenterTextColoredRGB(u8'Команды')
+	imgui.TextColoredRGB(u8'/moh - открыть меню\n/rn - нонрп чат /r\n/rf - нонрп чат /f')
+	imgui.Separator()
+	imgui.SetCursorPosX(210.0)
+	if imgui.Button(fa.ICON_VK) then
+	os.execute('explorer "https://vk.com/public184404260"')
+	end
+	imgui.SameLine()
+	imgui.Button(fa.ICON_ADN)
+	imgui.SameLine()
+	if imgui.Button(fa.ICON_USD) then
+	os.execute('explorer "https://vk.com/id417018939"')
+	imgui.Separator()
+	end
+	end
+	if selected == 3 then
+	pashel_otsuda = true
+	if imgui.Checkbox(u8'Показывать overlay', pokaz_overlay) then
+	  if pokaz_overlay.v then
+	    overlay = true
+	  elseif not pokaz_overlay.v then
+	    overlay = false
+	   end	
+	end
+	if imgui.Checkbox(u8'Показывать количество вылеченых пациентов', pacienty) then
+	  if pacienty.v then
+	    asdfgh = true
+		ini.checker.colvo_pacientov = 'true'
+	  elseif not pacienty.v then
+	    asdfgh = false
+		ini.checker.colvo_pacientov = 'false'
+	  end
+	end  
+	if imgui.Checkbox(u8'Автоскрин после лечения', auto_screen) then
+	  if auto_screen.v then
+	    scr = true
+		ini.checker.auto_screen = '1'
+	  elseif not auto_screen.v then
+	    scr = false
+		ini.checker.auto_screen = 'false'
+	  end
+	end  
+	if imgui.Checkbox(u8'Включить отыгровку /find', otugrovky) then
+	  if otugrovky.v then
+	    _find_ = true
+		ini.checker.otug_find = 'true'
+	  elseif not otugrovky.v then
+	    _find_ = false
+		ini.checker.otug_find = 'false'
+	  end
+	end
+	if imgui.Checkbox(u8'Включить отыгровку /medskip', otugrovky_1) then
+	  if otugrovky_1.v then
+	    medskip = true
+		ini.checker.otug_medskip = 'true'
+	  elseif not otugrovky_1.v then
+	    medskip = false
+		ini.checker.otug_medskip = 'false'
+	  end
+	end  
+	if imgui.Checkbox(u8'Включить отыгровку /c 060', otugrovky_2) then
+	  if otugrovky_2.v then
+	    c_060 = true
+		ini.checker.otug_c_060 = 'true'
+	  elseif not otugrovky_2.v then
+        c_060 = false
+		ini.checker.otug_medskip = 'false'
+	  end
+	end  
+	if imgui.Checkbox(u8'Включить отыгровку /r и /f', otugrovky_3) then
+	  if otugrovky_3.v then
+	    r_and_f = true
+		ini.checker.otug_r_and_f = 'true'
+	  elseif not otugrovky_3.v then
+        r_and_f = false
+		ini.checker.otug_r_and_f = 'false'
+	  end
+	end  
+	if imgui.Checkbox(u8'Включить отыгровку /showall', otugrovky_6) then
+	  if otugrovky_6.v then
+	    showall = true
+		ini.checker.otug_showall = 'true'
+	  elseif not otugrovky_6.v then
+	    showall = false
+		ini.checker.otug_showall = 'false'
+	  end
+	end
+	if imgui.Checkbox(u8'Включить автоответчик', auto_otv) then
+	  if auto_otv.v then
+	    aov = true
+		ini.checker.auto_otv = 'true'
+	  elseif not auto_otv.v then
+		aov = false
+		ini.checker.auto_otv = 'false'
+	  end
+	end
+	if imgui.Checkbox(u8'Женский пол', jenskiy) then
+	  if jenskiy.v then
+	    jens = true
+		ini.checker.devyshka = 'true'
+	  elseif not jenskiy.v then
+        jens = false
+		ini.checker.devyshka = 'false'
+	  end
+	end  
+	end
+	if selected == 5 then
+	pashel_otsuda = true
+	ini.checker.shpora = shpora.v
+	imgui.InputTextMultiline('', shpora, imgui.ImVec2(-0.1, - 0.1))
+	end
+	-- if selected == 6 then
+	-- pashel_otsuda = true
+	-- imgui.Checkbox(u8'Включить чекер друзей', checker)
+	-- imgui.Text(u8'Первый')
+	-- imgui.InputText('        ', drujok_1)
+	-- ini.checker.drug_1 = drujok_1.v
+	-- imgui.Text(u8'Второй')
+	-- imgui.InputText('         ', drujok_2)
+	-- ini.checker.drug_2 = drujok_2.v
+	-- imgui.Text(u8'Третий')
+	-- imgui.InputText('           ', drujok_3)
+	-- ini.checker.drug_3 = drujok_3.v
+	-- imgui.Text(u8'Четвёртый')
+	-- imgui.InputText('            ', drujok_4)
+	-- ini.checker.drug_4 = drujok_4.v
+	-- imgui.Text(u8'Пятый')
+	-- imgui.InputText('             ', drujok_5)
+	-- ini.checker.drug_5 = drujok_5.v
+	-- imgui.Text(u8'Шестой')
+	-- imgui.InputText('              ', drujok_6)
+	-- ini.checker.drug_6 = drujok_6.v
+	-- imgui.Text(u8'Седьмой')
+	-- imgui.InputText('                 ', drujok_7)
+	-- ini.checker.drug_7 = drujok_7.v
+	-- imgui.Text(u8'Восьмой')
+	-- imgui.InputText('                  ', drujok_8)
+	-- ini.checker.drug_8 = drujok_8.v
+	-- imgui.Text(u8'Девятый')
+	-- imgui.InputText('                     ', drujok_9)
+	-- ini.checker.drug_9 = drujok_9.v
+	-- imgui.Text(u8'Десятый')
+	-- imgui.InputText('                        ', drujok_10)
+	-- ini.checker.drug_10 = drujok_10.v
+	-- end
+	if selected == 4 then
+	pashel_otsuda = true
+	imgui.Text(u8'Введите задержку')
+	imgui.InputText('', zaderjka)
+	if zaderjka.v then
+	ini.checker.zaderjka = zaderjka.v
+	end
+	if imgui.Button(u8'Отыгровка перед операцией', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me открыл шкаф')
+	wait(zaderjka.v)
+	sampSendChat('/me достал стерильные перчатки')
+	wait(zaderjka.v)
+	sampSendChat('/me закрыл шкаф')
+	wait(zaderjka.v)
+	sampSendChat('/me надел перчатки')
+	sampAddChatMessage('{ffffff}Подойдите к столу с хирургическими предмета и пропишите команду /ftr', -1)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me взял поднос со стола')
+	wait(zaderjka.v)
+	sampSendChat('/do Поднос в руках.')
+	wait(zaderjka.v)
+	sampAddChatMessage('{ffffff}Подойдите к операционному столу и пропишите команду /ftr', -1)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me поставил поднос на табуретку')
+	end)
+	end
+	if imgui.Button(u8'Перелом конечности', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me осмотрел пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me наложил шину на повреждённую конечность')
+	wait(zaderjka.v)
+	sampSendChat('/me из сумки висящей на плече достал бинт')
+	wait(zaderjka.v)
+	sampSendChat('/me зафиксировал конечность')
+	wait(zaderjka.v)
+	sampSendChat('/do Конечность зафиксирована.')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me смочил в спиртовом растворе ватный тампон')
+	wait(zaderjka.v)
+	sampSendChat('/me обработав место укола, вколол обезболивающее пациенту')
+	end)
+	end
+	if imgui.Button(u8'Перелом рёбер', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me осмотрел пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me освободил туловище пациента от одежды')
+	wait(zaderjka.v)
+	sampSendChat('/me из сумки висящей на плече достал эластичный бинт')
+	wait(zaderjka.v)
+	sampSendChat('/me аккуратно наложил тугую повязку')
+	wait(zaderjka.v)
+	sampSendChat('/do Повязка наложена.')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me смочил в спиртовом растворе ватный тампон')
+	wait(zaderjka.v)
+	sampSendChat('/me обработав место укола, вколол обезболивающее пациенту')
+	end)
+	end
+	if imgui.Button(u8'Первая помощь при ранениях', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me осмотрел пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me из сумки висящей на плече достал шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me смочил в спиртовом растворе ватный тампон')
+	wait(zaderjka.v)
+	sampSendChat('/me обработав место укола, вколол обезболивающее пациенту')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки жгут')
+	wait(zaderjka.v)
+	sampSendChat('/me наложил жгут выше области ранения')
+	wait(zaderjka.v)
+	sampSendChat('/do Кровотечение остановлено.')
+	wait(zaderjka.v)
+	sampSendChat('/me достав из сумки перекись водорода, обработал рану')
+	wait(zaderjka.v)
+	sampSendChat('/me достав из сумки бинт, наложил асептическую повязку')
+	wait(zaderjka.v)
+	sampSendChat('/do Повязка наложена.')
+	wait(zaderjka.v)
+	sampSendChat('/me положил остатки бинта и перекись водорода в сумку')
+	end)
+	end
+	if imgui.Button(u8'Первая помощь при ДТП', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me достав из сумки стерильные перчатки, надел их на руки')
+	wait(zaderjka.v)
+	sampSendChat('/me осмотрел пациента')
+	wait(zaderjka.v)
+	sampSendChat('/do Пациент в сознании.')
+	wait(zaderjka.v)
+	sampSendChat('Попробуйте подвигать руками. Получается?')
+	wait(zaderjka.v)
+	sampSendChat('Хорошо. Теперь подвигайте ногами. Получается?')
+	sampAddChatMessage('{ffffff}При положительном ответе - /ftr, при отрицательном узнавайте что не движется и далее так же пишете команду /ftr.', -1)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me резким движением руки открыл двери кареты')
+	wait(zaderjka.v)
+	sampSendChat('/me выкатил из кареты носилки')
+	wait(zaderjka.v)
+	sampSendChat('/me подкатил носилки к пациенту')
+	wait(zaderjka.v)
+	sampSendChat('/me аккуратно переложил пациента на носилки')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me смочил в спиртовом растворе ватный тампон')
+	wait(zaderjka.v)
+	sampSendChat('/me обработав место укола, вколол обезболивающее пациенту')
+	wait(zaderjka.v)
+	sampSendChat('Сейчас Вам станет легче')
+	wait(zaderjka.v)
+	sampSendChat('/me закатил носилки в карету')
+	wait(zaderjka.v)
+	sampSendChat('/me закрыл двери кареты')
+	end)
+	end
+	if imgui.Button(u8'Реанимация', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me протянув руку, проверил пульс пациента на сонной артерии')
+	wait(zaderjka.v)
+	sampSendChat('/me проверил дыхание пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me уложив пациента на спину, приподнял ноги')
+	wait(zaderjka.v)
+	sampSendChat('/me проводит непрямой массаж сердца')
+	wait(zaderjka.v)
+	sampSendChat('/me проводит искусственное дыхание "рот в рот"')
+	wait(zaderjka.v)
+	sampSendChat('/try пациент пришёл в сознание')
+	end)
+	end
+	if imgui.Button(u8'Первая помощь при ожогах', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me достал из сумки, висящей на плече, стерильные перчатки')
+	wait(zaderjka.v)
+	sampSendChat('/me надел перчатки на руки')
+	wait(zaderjka.v)
+	sampSendChat('/me осмотрел пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me освободил место ожога от одежды')
+	wait(zaderjka.v)
+	sampSendChat('/me оценил площадь и глубину ожога')
+	wait(zaderjka.v)
+	sampSendChat('/me взял бутылку с чистой водой')
+	wait(zaderjka.v)
+	sampSendChat('/me открутив крышку на бутылке, вылил воду на место ожога')
+	wait(zaderjka.v)
+	sampSendChat('/do Ожог охлаждён.')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me смочил спиртовым раствором ватный тампон')
+	wait(zaderjka.v)
+	sampSendChat('/me обработав место укола, вколол обезболивающее пациенту')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки баллончик с надписью "Пантенол"')
+	wait(zaderjka.v)
+	sampSendChat('/me разбрызгал спрей на область ожога')
+	wait(zaderjka.v)
+	sampSendChat('/me достал из сумки стерильную салфетку')
+	wait(zaderjka.v)
+	sampSendChat('/me прикрыл салфеткой ожог')
+	wait(zaderjka.v)
+	sampSendChat('/do Ожог обработан.')
+	end)
+	end
+	if imgui.Button(u8'Огнестрельное ранение', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me осмотрел рану больного')
+	wait(zaderjka.v)
+	sampSendChat('/me поставил капельницу')
+	wait(zaderjka.v)
+	sampSendChat('/me подключил пациента к аппарату ИВЛ')
+	wait(zaderjka.v)
+	sampSendChat('/me взял скальпель')
+	wait(zaderjka.v)
+	sampSendChat('/me сделал разрез')
+	wait(zaderjka.v)
+	sampSendChat('/me взял расширитель')
+	wait(zaderjka.v)
+	sampSendChat('/me разжал место надреза')
+	wait(zaderjka.v)
+	sampSendChat('/me взял щипцы')
+	wait(zaderjka.v)
+	sampSendChat('/try вытащил пулю (Удачно/Неудачно)')
+	sampAddChatMessage('Если неудачно - /ftr, если удачно - /success', 0xFFFFFF)
+	if prodoljaem then
+	sampSendChat('/me взял пулю под другим углом')
+	wait(zaderjka.v)
+	sampSendChat('/me отложил щипцы')
+	wait(zaderjka.v)
+	sampSendChat('/me положил пулю в ящик для экспертизы')
+	wait(zaderjka.v)
+	sampSendChat('/me обрезал рваные и мертвые ткани около раны скальпелем')
+	wait(zaderjka.v)
+	sampSendChat('/me снял расширитель')
+	wait(zaderjka.v)
+	sampSendChat('/me взял хирургическую нить и иголку')
+	wait(zaderjka.v)
+	sampSendChat('/me зашил рану')
+	wait(zaderjka.v)
+	sampSendChat('/me взял ножницы')
+	wait(zaderjka.v)
+	sampSendChat('/me обрезал нить')
+	wait(zaderjka.v)
+	sampSendChat('/me положил ножницы и иглу ')
+	wait(zaderjka.v)
+	sampSendChat('/me обработал рану антисептиком')
+	wait(zaderjka.v)
+	sampSendChat('/me обильно смазал рану йодом')
+	wait(zaderjka.v)
+	sampSendChat('/me перевязал рану бинтом')
+	wait(zaderjka.v)
+	sampSendChat('/me отключил пациента от аппарата ИВЛ')
+	end
+	if success then
+	sampSendChat('/me отложил щипцы')
+	wait(zaderjka.v)
+	sampSendChat('/me положил пулю в ящик для экспертизы')
+	wait(zaderjka.v)
+	sampSendChat('/me обрезал рваные и мертвые ткани около раны скальпелем')
+	wait(zaderjka.v)
+	sampSendChat('/me снял расширитель')
+	wait(zaderjka.v)
+	sampSendChat('/me взял хирургическую нить и иголку')
+	wait(zaderjka.v)
+	sampSendChat('/me зашил рану')
+	wait(zaderjka.v)
+	sampSendChat('/me взял ножницы')
+	wait(zaderjka.v)
+	sampSendChat('/me обрезал нить')
+	wait(zaderjka.v)
+	sampSendChat('/me положил ножницы и иглу ')
+	wait(zaderjka.v)
+	sampSendChat('/me обработал рану антисептиком')
+	wait(zaderjka.v)
+	sampSendChat('/me обильно смазал рану йодом')
+	wait(zaderjka.v)
+	sampSendChat('/me перевязал рану бинтом')
+	wait(zaderjka.v)
+	sampSendChat('/me отключил пациента от аппарата ИВЛ')
+	end
+	end)
+	end
+	if imgui.Button(u8'Смена пола', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me поставил капельницу')
+	wait(zaderjka.v)
+	sampSendChat('/me подключил пациента к аппарату ИВЛ')
+	wait(zaderjka.v)
+	sampSendChat('/me взял скальпель')
+	wait(zaderjka.v)
+	sampSendChat('/me сделал разрез')
+	wait(zaderjka.v)
+	sampSendChat('/me взял щипцы')
+	wait(zaderjka.v)
+	sampSendChat('/me изъял половые органы')
+	wait(zaderjka.v)
+	sampSendChat('/me положил в капсулу')
+	wait(zaderjka.v)
+	sampSendChat('/me взял капсулу в руки')
+	wait(zaderjka.v)
+	sampSendChat('/me открыл дверцу ящика')
+	wait(zaderjka.v)
+	sampSendChat('/me положил капсулу в ящик')
+	wait(zaderjka.v)
+	sampSendChat('/me взял капсулу с противоположными органами')
+	wait(zaderjka.v)
+	sampSendChat('/me положил капсулу на стол')
+	wait(zaderjka.v)
+	sampSendChat('/me открыл капсулу')
+	wait(zaderjka.v)
+	sampSendChat('/me достал щипцами органы')
+	wait(zaderjka.v)
+	sampSendChat('/me аккуратно вставил в разрез')
+	wait(zaderjka.v)
+	sampSendChat('/me взял иголку и нитки')
+	wait(zaderjka.v)
+	sampSendChat('/me зашивает место разреза')
+	wait(zaderjka.v)
+	sampSendChat('/me обработал швы')
+	wait(zaderjka.v)
+	sampSendChat('/me взял бинт')
+	wait(zaderjka.v)
+	sampSendChat('/me наложил повязку на шов')
+	wait(zaderjka.v)
+	sampSendChat('/me пометил маркером изменения на лице')
+	wait(zaderjka.v)
+	sampSendChat('/me взял скальпель')
+	wait(zaderjka.v)
+	sampSendChat('/me сделал надрезы')
+	wait(zaderjka.v)
+	sampSendChat('/me сформировал новые форму лица')
+	wait(zaderjka.v)
+	sampSendChat('/me взят шприц с ботоксом')
+	wait(zaderjka.v)
+	sampSendChat('/me вколол ботокс в лицо пациента')
+	wait(zaderjka.v)
+	sampSendChat('/do Новые формы лица сформированы.')
+	wait(zaderjka.v)
+	sampSendChat('/me взял шприц с гормонами нужного пола')
+	wait(zaderjka.v)
+	sampSendChat('/me вколол гормоны пациенту')
+	wait(zaderjka.v)
+	sampSendChat('/me отключил пациента от аппарата ИВЛ')
+	end)
+	end
+	if imgui.Button(u8'Анестезия', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me надел жгут на руку пациенту')
+	wait(zaderjka.v)
+	sampSendChat('/me взял шприц с обезболивающим')
+	wait(zaderjka.v)
+	sampSendChat('/me вколол обезболивающее пациенту в руку')
+	wait(zaderjka.v)
+	sampSendChat('/do Обезболивающее подействовало.')
+	wait(zaderjka.v)
+	sampSendChat('/me взял кислородную маску')
+	wait(zaderjka.v)
+	sampSendChat('/me присоединил кислородную маску к аппарату наркоза')
+	wait(zaderjka.v)
+	sampSendChat('/me надел кислородную маску на пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me включил аппарат наркоза')
+	wait(zaderjka.v)
+	sampSendChat('/do Наркоз подействовал, пациент уснул.')
+	sampAddChatMessage('В конце операции пропишите команду /ftr', -1)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me снял кислородную маску с пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me отключил аппарат наркоза')
+	end)
+	end
+	if imgui.Button(u8'Капельница', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me подвинул штатив для капельницы к операционному столу')
+	wait(zaderjka.v)
+	sampSendChat('/me надел на руки стерильные перчатки')
+	wait(zaderjka.v)
+	sampSendChat('/me взял со столика бутыль с инфузионным раствором')
+	wait(zaderjka.v)
+	sampSendChat('/me сняв металлическую крышку с бутыли, выбросил её в мусорный бак')
+	wait(zaderjka.v)
+	sampSendChat('/me ватой, смоченной в спирте, обработал резиновую крышку на бутыли')
+	wait(zaderjka.v)
+	sampSendChat('/me поставив бутыль на столик, взял в руки ампулу с лекарством и шприц')
+	wait(zaderjka.v)
+	sampSendChat('/me аккуратно обломив ампулу, набрал лекарство в шприц')
+	wait(zaderjka.v)
+	sampSendChat('/me выбросил пустую ампулу в мусорный бак')
+	wait(zaderjka.v)
+	sampSendChat('/me ввёл иглу шприца в середину резиновой крышки бутыли с раствором')
+	wait(zaderjka.v)
+	sampSendChat('/me надавив на поршень шприца, ввёл лекарство в раствор')
+	wait(zaderjka.v)
+	sampSendChat('/me взял со столика пакет с инфузионным набором')
+	wait(zaderjka.v)
+	sampSendChat('/me освободил набор от упаковки')
+	wait(zaderjka.v)
+	sampSendChat('/me с помощью иглы на конце системы, соединил её с бутылью проткнув ею крышку')
+	wait(zaderjka.v)
+	sampSendChat('/me перевернув бутыль, подвесил её на штатив')
+	wait(zaderjka.v)
+	sampSendChat('/me открыл воздушный клапан на системе')
+	wait(zaderjka.v)
+	sampSendChat('/do Жидкость полностью заполнила трубку.')
+	wait(zaderjka.v)
+	sampSendChat('/me надел иглу на конец трубки')
+	wait(zaderjka.v)
+	sampSendChat('/me взяв со столика жгут, затянул его на руке пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me нащупал пальцем центральную вену')
+	wait(zaderjka.v)
+	sampSendChat('/me смоченным в спирте ватным тампоном обработал место укола')
+	wait(zaderjka.v)
+	sampSendChat('/me аккуратно ввёл иглу в вену пациента')
+	wait(zaderjka.v)
+	sampSendChat('/do Игла введена в вену.')
+	wait(zaderjka.v)
+	sampSendChat('/me небольшим куском пластыря зафиксировал иглу на коже пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me сняв жгут с руки пациента, положил его на столик')
+	wait(zaderjka.v)
+	sampSendChat('/me повернув колёсико на системе, открыл доступ лекарства в вену')
+	wait(zaderjka.v)
+	sampSendChat('/do Капельница поставлена.')
+	end)
+	end
+	if imgui.Button(u8'Анализ крови', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/do На руках перчатки, на лице маска.')
+	wait(zaderjka.v)
+	sampSendChat('/me взял со стола запечатанную иглу и банки для анализов')
+	wait(zaderjka.v)
+	sampSendChat('/me взял жгут')
+	wait(zaderjka.v)
+	sampSendChat('/me перевязал жгут на руке пациента выше локтя')
+	wait(zaderjka.v)
+	sampSendChat('Сожмите и разожмите кулак несколько раз.')
+	wait(zaderjka.v)
+	sampSendChat('/do На руке пациента выступили вены.')
+	wait(zaderjka.v)
+	sampSendChat('/me распечатал иглу, после чего присоединил её к банке для анализов')
+	wait(zaderjka.v)
+	sampSendChat('/me вставил иглу в вену')
+	wait(zaderjka.v)
+	sampSendChat('/do Кровь начала поступать в банку для анализов.')
+	wait(zaderjka.v)
+	sampSendChat('/do Процесс...')
+	wait(zaderjka.v)
+	sampSendChat('/do Банка для анализов заполнена.')
+	wait(zaderjka.v)
+	sampSendChat('/me вытащил иглу из вены пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me снял жгут с руки пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me приложил ватку к месту укола')
+	wait(zaderjka.v)
+	sampSendChat('Согните руку и держите так в течении 5-10 минут.')
+	wait(zaderjka.v)
+	sampSendChat('/me взял экспресс-тест для анализа крови')
+	end)
+	end
+	if imgui.Button(u8'Анализ мочи', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('Пройдите в туалет.')
+	wait(zaderjka.v)
+	sampSendChat('/me выдал баночку для анализов')
+	wait(100)
+	sampAddChatMessage('После того как пациент вернётся пропишите команду /ftr', 0xFFFFFF)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me взял банку для анализов из рук пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me открыл банку')
+	wait(zaderjka.v)
+	sampSendChat('/me достал экспресс тест для анализа мочи')
+	end)
+	end
+	if imgui.Button(u8'Измерение давления', imgui.ImVec2(513, 50)) then
+	lua_thread.create(function ()
+	sampSendChat('/me взял электронный тонометр')
+	wait(zaderjka.v)
+	sampSendChat('/me надел манжету на руку пациента')
+	wait(zaderjka.v)
+	sampSendChat('/me включил тонометр')
+	wait(zaderjka.v)
+	sampSendChat('/do Тонометр начал измерять давление.')
+	wait(zaderjka.v)
+	sampSendChat('/do Процесс...')
+	wait(zaderjka.v)
+	sampSendChat('/do Тонометр запищал, давление измерено.')
+	wait(zaderjka.v)
+	sampSendChat('/me посмотрел на показания тонометра')
+	wait(100)
+	sampAddChatMessage('После того как измерили давление пропишите команду /ftr', 0xFFFFFF)
+	repeat wait(0) until prodoljaem
+	sampSendChat('/me снял манжету с руки пациента')
+	end)
+	end
+	end
+	inicfg.save(ini, directory)
+	imgui.EndChild()
+	imgui.End()
+  end
+end
+
+function imgui.VerticalSeparator()
+    local p = imgui.GetCursorScreenPos()
+    imgui.GetWindowDrawList():AddLine(imgui.ImVec2(p.x, p.y-30), imgui.ImVec2(p.x, p.y + imgui.GetContentRegionMax().y), imgui.GetColorU32(imgui.GetStyle().Colors[imgui.Col.Separator]))
+end
+
+function imgui.TextColoredRGB(text)
+  local style = imgui.GetStyle()
+  local colors = style.Colors
+  local ImVec4 = imgui.ImVec4
+
+  local explode_argb = function(argb)
+    local a = bit.band(bit.rshift(argb, 24), 0xFF)
+    local r = bit.band(bit.rshift(argb, 16), 0xFF)
+    local g = bit.band(bit.rshift(argb, 8), 0xFF)
+    local b = bit.band(argb, 0xFF)
+    return a, r, g, b
+  end
+
+  local getcolor = function(color)
+    if color:sub(1, 6):upper() == 'SSSSSS' then
+      local r, g, b = colors[1].x, colors[1].y, colors[1].z
+      local a = tonumber(color:sub(7, 8), 16) or colors[1].w * 255
+      return ImVec4(r, g, b, a / 255)
+    end
+    local color = type(color) == 'string' and tonumber(color, 16) or color
+    if type(color) ~= 'number' then return end
+    local r, g, b, a = explode_argb(color)
+    return imgui.ImColor(r, g, b, a):GetVec4()
+  end
+
+  local render_text = function(text_)
+    for w in text_:gmatch('[^\r\n]+') do
+      local text, colors_, m = {}, {}, 1
+      w = w:gsub('{(......)}', '{%1FF}')
+      while w:find('{........}') do
+        local n, k = w:find('{........}')
+        local color = getcolor(w:sub(n + 1, k - 1))
+        if color then
+          text[#text], text[#text + 1] = w:sub(m, n - 1), w:sub(k + 1, #w)
+          colors_[#colors_ + 1] = color
+          m = n
+        end
+        w = w:sub(1, n - 1) .. w:sub(k + 1, #w)
+      end
+      if text[0] then
+        for i = 0, #text do
+          imgui.TextColored(colors_[i] or colors[1], u8(text[i]))
+          imgui.SameLine(nil, 0)
+        end
+        imgui.NewLine()
+      else imgui.Text((w)) end
+    end
+  end
+
+  render_text(text)
+end
+
+function imgui.CenterTextColoredRGB(text)
+    local width = imgui.GetWindowWidth()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local ImVec4 = imgui.ImVec4
+
+    local explode_argb = function(argb)
+        local a = bit.band(bit.rshift(argb, 24), 0xFF)
+        local r = bit.band(bit.rshift(argb, 16), 0xFF)
+        local g = bit.band(bit.rshift(argb, 8), 0xFF)
+        local b = bit.band(argb, 0xFF)
+        return a, r, g, b
+    end
+
+    local getcolor = function(color)
+        if color:sub(1, 6):upper() == 'SSSSSS' then
+            local r, g, b = colors[1].x, colors[1].y, colors[1].z
+            local a = tonumber(color:sub(7, 8), 16) or colors[1].w * 255
+            return ImVec4(r, g, b, a / 255)
+        end
+        local color = type(color) == 'string' and tonumber(color, 16) or color
+        if type(color) ~= 'number' then return end
+        local r, g, b, a = explode_argb(color)
+        return imgui.ImColor(r, g, b, a):GetVec4()
+    end
+
+    local render_text = function(text_)
+        for w in text_:gmatch('[^\r\n]+') do
+            local textsize = w:gsub('{.-}', '')
+            local text_width = imgui.CalcTextSize(u8(textsize))
+            imgui.SetCursorPosX( width / 2 - text_width .x / 2 )
+            local text, colors_, m = {}, {}, 1
+            w = w:gsub('{(......)}', '{%1FF}')
+            while w:find('{........}') do
+                local n, k = w:find('{........}')
+                local color = getcolor(w:sub(n + 1, k - 1))
+                if color then
+                    text[#text], text[#text + 1] = w:sub(m, n - 1), w:sub(k + 1, #w)
+                    colors_[#colors_ + 1] = color
+                    m = n
+                end
+                w = w:sub(1, n - 1) .. w:sub(k + 1, #w)
+            end
+            if text[0] then
+                for i = 0, #text do
+                    imgui.TextColored(colors_[i] or colors[1], u8(text[i]))
+                    imgui.SameLine(nil, 0)
+                end
+                imgui.NewLine()
+            else
+                imgui.Text((w))
+            end
+        end
+    end
+    render_text(text)
+end
+
+function rp_find()
+	sampSendChat("/find")
+		if _find_ or ini.checker.otug_find == true then
+			sampSendChat('/me достал планшет из кармана, после чего зашёл в раздел со списком сотрудников')
+		end
+end
+
+function rp_medskip()
+	sampSendChat("/medskip")
+		if medskip or ini.checker.otug_medskip == true then
+			sampSendChat('/me провёл специальной карточкой по датчику, после чего открыл дверь')
+		end
+end
+
+function sampev.onServerMessage(color, msg)--активируется при появлении любого сообщеня в чате
+local _, mid = sampGetPlayerIdByCharHandle(PLAYER_PED)
+local namem = sampGetPlayerNickname(mid)
+  if asdfgh or ini.checker.colvo_pacientov == true then
+    if msg:find('Медработник') and msg:find(namem) and msg:find(mid) then
+        col_vo_le4eniy = col_vo_le4eniy + 1
+    end
+  end	
+  if scr or ini.checker.auto_screen == true then
+    if msg:find('Медработник') and msg:find(namem) and msg:find(mid) then
+       lua_thread.create(function ()
+	   sampSendChat('/c 060')
+	   wait(1000)
+	   setVirtualKeyDown(119, true)
+	   wait(1)
+	   setVirtualKeyDown(119, false)
+	   end)
+    end
+  end
+  if aov or ini.checker.auto_otv == true then
+    if msg:find('Входящий звонок | Номер:') then
+		lua_thread.create(function ()
+		wait(100)
+		sampSendChat('/p')
+		wait(500)
+		sampSendChat('Добрый день, я Анастезиолог Больницы г. Los-Santos.')
+		wait(1500)
+		sampSendChat('Чем могу помочь?')
+		end)
+	end
+  end
+  if msg:find('Вы') and msg:find('уволили') and msg:find('из') and msg:find('своей') and msg:find('организации') then
+  lua_thread.create(function ()
+  yvolil = true
+  wait(100)
+  yvolil = false
+  end)
+  end
+  if msg:find('рацию') and msg:find('форму') and msg:find('бейджик') and msg:find(''..nameblya..'') and not msg:find(':') then
+  lua_thread.create(function ()
+  peredal = true
+  wait(100)
+  peredal = false
+  end)
+  end
+end
+
+function rp_medhelp(arg)
+local arg1, arg3 = arg:match('(.-)%s(.+)')
+local _, mid = sampGetPlayerIdByCharHandle(PLAYER_PED)
+local name = sampGetPlayerNickname(mid):gsub('_', ' ')
+lua_thread.create(function ()
+sampSendChat('Добрый день, я Ваш лечащий врач '..name..'. Что Вас беспокоит?')
+sampAddChatMessage('После ответа пропишите команду /ftr', 0xFFFFFF)
+repeat wait(0) until prodoljaem
+sampSendChat('/me внимательно осмотрел'..devkam..' пациента')
+wait(2000)
+sampSendChat('/todo Поставив пациенту диагноз*Я выпишу Вам лекарство')
+wait(2000)
+sampSendChat('/do Через плечо надета мед. сумка.')
+wait(2000)
+if not jens then
+sampSendChat('/me залез рукой в мед. сумку и достал'..devkam..' лекарство')
+wait(2000)
+sampSendChat('/me передал'..devkam..' лекарство пациенту')
+wait(2000)
+sampSendChat('/anim 21')
+wait(2000)
+sampSendChat('/medhelp '..arg1..' '..arg3..'')
+wait(3000)
+sampSendChat('Всего доброго! Не болейте!')
+end
+if jens then
+sampSendChat('/me залезла рукой в мед. сумку и достал'..devkam..' лекарство')
+wait(2000)
+sampSendChat('/me передал'..devkam..' лекарство пациенту')
+wait(2000)
+sampSendChat('/anim 21')
+wait(2000)
+sampSendChat('/medhelp '..arg1..' '..arg3..'')
+wait(3000)
+sampSendChat('Всего доброго! Не болейте!')
+end
+end)
+end
+
+function rp_invite(arg)
+if not vse then
+lua_thread.create(function ()
+sampSendChat('/do Чемодан с формой и бейджиками в руке.')
+wait(2000)
+if not jens then
+sampSendChat('/me открыл чемодан и нашла нужную форму и бейджик')
+wait(2000)
+sampSendChat('/me достал форму и бейджик из чемодана')
+wait(2000)
+sampSendChat('/me передал форму и бейджик человеку напротив')
+wait(2000)
+sampSendChat('/invite '..arg)
+vse = true
+wait(1000)
+vse = false
+end
+if jens then
+sampSendChat('/me открыл чемодан и нашел нужную форму и бейджик')
+wait(2000)
+sampSendChat('/me достал форму и бейджик из чемодана')
+wait(2000)
+sampSendChat('/me передал форму и бейджик человеку напротив')
+wait(2000)
+sampSendChat('/invite '..arg)
+vse = true
+wait(1000)
+vse = false
+end
+end)
+end
+end
+
+function rp_c_060(arg)
+	if arg == '060' then
+	  if not c_060 or ini.checker.otug_c_060 == false then
+		sampSendChat('/c 060')
+	  end	
+		if c_060 or ini.checker.otug_c_060 == true then
+			lua_thread.create(function ()
+			sampSendChat('/me достал'..devkam..' смартфон из кармана')
+			wait(1500)
+			sampSendChat('/me включив его, посмотрел'..devkam..' время')
+			wait(100)
+			sampSendChat('/c 060')
+			wait(1500)
+			sampSendChat('/me выключил'..devkam..' смартфон, после чего засунул'..devkam..' его в карман')
+			end)
+		end
+	end	
+end		
+
+function rp_r_pr(arg)
+		sampSendChat('/r '..arg)
+		if r_and_f or ini.checker.otug_r_and_f == true then
+		  if not jens then
+			sampSendChat('/me зажав кнопку на рации, поднёс её ко рту и что-то сказал')
+		  end
+		  if jens then
+		    sampSendChat('/me зажав кнопку на рации, поднесла её ко рту и что-то сказала')
+		  end	
+		end
+end		
+
+function rp_f_pr(arg)
+	
+	local arg = u8(arg)
+	
+	if not nonrp then
+		sampSendChat(u8:decode('/f '..ini.checker.tag..' '..arg))
+		if r_and_f or ini.checker.otug_r_and_f == true then
+			if not jens then
+			  if tag_on then
+			  sampSendChat('/me зажав кнопку на рации, поднёс её ко рту и что-то сказал')
+			  end
+			end
+		  if jens then
+		    if tag_on then
+		    sampSendChat('/me зажав кнопку на рации, поднесла её ко рту и что-то сказала')
+			end
+		  end	
+		end
+	end	
+end		
+
+function rp_showall()
+		sampSendChat("/showall")
+		if showall or ini.checker.otug_showall == true then
+			lua_thread.create(function ()
+			if not jens then
+			sampSendChat('/me достал планшет, включил его')
+			wait(1500)
+			sampSendChat('/me зашёл в раздел "Список всех сотрудников Больницы"')
+			end
+			if jens then
+			sampSendChat('/me достала планшет, включила его')
+			wait(1500)
+			sampSendChat('/me зашла в раздел "Список всех сотрудников Больницы"')
+			end
+			end)
+		end
+end	
+  
+function sampGetPlayerIdByNickname(nick)
+
+    local _, myid = sampGetPlayerIdByCharHandle(playerPed)
+
+    if tostring(nick) == sampGetPlayerNickname(myid) then return myid end
+
+    for i = 0, 1000 do if sampIsPlayerConnected(i) and sampGetPlayerNickname(i) == tostring(nick) then return i end end
+
+end
+
+function ftr()
+lua_thread.create(function ()
+prodoljaem = true
+wait(1)
+prodoljaem = false
+end)
+end
+
+function sobeska(arg)
+local _, mid = sampGetPlayerIdByCharHandle(PLAYER_PED)
+local name = sampGetPlayerNickname(arg):gsub('_', ' ')
+local nameeee = sampGetPlayerNickname(arg)
+lua_thread.create(function ()
+sampSendChat('Здравствуйте, Вы на собеседование?')
+wait(100)
+sampAddChatMessage('Если ответ положительный пропишите команду /ftr, если отрицательный, то ничего прописывать ненадо (так же при следующих ответах)', 0xFFFFFF)
+repeat wait(0) until prodoljaem
+sampSendChat('Хорошо, расскажите о себе.')
+wait(500)
+repeat wait(0) until prodoljaem
+sampSendChat('Теперь покажите паспорт, лицензии и медицинскую карту.')
+wait(2000)
+sampSendChat('/n /pass '..mid..' /lic '..mid..' /me показал(а) медицинскую карту')
+wait(500)
+repeat wait(0) until prodoljaem
+sampSendChat('Хорошо, что такое МГ?')
+wait(500)
+repeat wait(0) until prodoljaem
+sampSendChat('/n Что такое РП ДМ МГ?')
+wait(500)
+repeat wait(0) until prodoljaem
+sampSendChat('Сейчас я Вас проверю на ЧС МЗ.')
+wait(2000)
+sampSendChat('/do На столе лежит планшет.')
+wait(2000)
+sampSendChat('/me взял'..devkam..' планшет в руки, после чего открыл'..devkam..' раздел "Чёрный Список Министерства Здравоохранения"')
+wait(2000)
+sampSendChat('/me ввёл в поиске "'..name..'"')
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/black', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Blue' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Blue' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistgreen', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Green' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Green' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistyellow', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Yellow' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Yellow' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistorange', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Orange' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Orange' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistwhite', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'White' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'White' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blacklistsilver', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Silver' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Silver' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blackpurple', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+	async_http_request('GET', 'https://raw.githubusercontent.com/Vghjk/blacklist123/master/blackchocolate', nil --[[параметры запроса]],
+	function(response) -- вызовется при успешном выполнении и получении ответа
+	if not string.find(response.text, ''..name..'') and not string.find(response.text, ''..nameeee..'') and gameServer == 'Chocolate' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия не найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('Отлично, Вас нет в Чёрном Списке Министерства Здравоохранения.')
+	wait(2000)
+	sampSendChat('Вы успешно прошли собеседование и приняты в нашу Больницу.')
+	end)
+	end
+	if string.find(response.text, ''..name..'') or string.find(response.text, ''..nameeee..'') and gameServer == 'Purple' then
+	lua_thread.create(function ()
+	sampSendChat('/do Данное имя и фамилия найдены в Чёрном Списке.')
+	wait(2000)
+	sampSendChat('/me выключив планшет, положил'..devkam..' его на стол')
+	wait(2000)
+	sampSendChat('К сожелению, Вы состоите в Чёрном Списке Министерства Здравоохранения.')
+	end)
+	end
+	end,
+	function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
+	print(err)
+	end)
+end)
+end
+
+function rp_uninvite(arg)
+if not vse then
+local arg1, arg3 = arg:match('(.-)%s(.+)')
+name = sampGetPlayerNickname(arg1):gsub('_', ' ')
+nameblya = sampGetPlayerNickname(arg1)
+lua_thread.create(function ()
+sampSendChat('Давайте мне свою рацию, форму и бейджик.')
+wait(500)
+sampSendChat('/n /me передал(а) рацию, форму и бейджик человеку напротив')
+repeat wait(0) until peredal
+sampSendChat('/me взял рацию, форму и бейджик в руки, после чего положил на стол')
+wait(2000)
+sampSendChat('/me достал из кармана планшет')
+wait(2000)
+sampSendChat('/me открыл'..devkam..' раздел сотрудников Больницы и удалил'..devkam..' из списка "'..name..'"')
+wait(2000)
+sampSendChat('/me выключив планшет, положил'..devkam..' его в карман')
+wait(100)
+sampSendChat('/uninvite '..arg1..' '..arg3..'')
+wait(500)
+sampSendChat('/f '..tag..' Аннулировал сотрудника №'..arg1..' ('..name..'). Причина: '..arg3..'.')
+vse = true
+wait(1000)
+vse = false
+end)
+end
+end
+
+function async_http_request(method, url, args, resolve, reject)
+    local request_lane = lanes.gen('*', {package = {path = package.path, cpath = package.cpath}}, function()
+        local requests = require 'requests'
+        local ok, result = pcall(requests.request, method, url, args)
+        if ok then
+            result.json, result.xml = nil, nil
+            return true, result
+        else
+            return false, result
+        end
+    end)
+    if not reject then reject = function() end end
+    lua_thread.create(function()
+        local lh = request_lane()
+        while true do
+            local status = lh.status
+            if status == 'done' then
+                local ok, result = lh[1], lh[2]
+                if ok then resolve(result) else reject(result) end
+                return
+            elseif status == 'error' then
+                return reject(lh[1])
+            elseif status == 'killed' or status == 'cancelled' then
+                return reject(status)
+            end
+            wait(0)
+        end
+    end)
+end
+
+-- function update()
+	-- local updatePath = os.getenv('TEMP')..'\\Update.json'
+    -- if doesFileExist(updatePath) then os.remove(updatePath) end
+	-- downloadUrlToFile("https://www.dropbox.com/s/d9go7ufpkke3l4r/Update.json?dl=0", updatePath, function(id, status, p1, p2)
+		-- if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+			-- local file = io.open(updatePath, 'r')
+			-- if file and doesFileExist(updatePath) then
+				-- local info = decodeJson(file:read("*a"))
+				-- if info.version ~= thisScript().version then
+					-- lua_thread.create(function()
+						-- wait(2000)
+						-- downloadUrlToFile("https://www.dropbox.com/s/3v5ja643pe7dlt8/MoH%20Assistant.luac?dl=0", thisScript().path, function(id, status, p1, p2)
+							-- if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+								-- sampAddChatMessage("Обновление успешно загружено", -1)
+								-- sampAddChatMessage(("Старая версия: %s, новая: %s"):format(thisScript().version, info.version), -1)
+                                -- file:close(); os.remove(updatePath)
+                                -- thisScript():reload()
+							-- end
+						-- end)
+					-- end)
+				-- else
+					-- isUpdate = true
+					-- print("Обновлений нет")
+					-- file:close(); os.remove(updatePath)
+                -- end
+            -- end
+		-- end
+	-- end)
+-- end
